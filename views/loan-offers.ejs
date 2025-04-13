@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Loan Offers</title>
+  <link rel="stylesheet" href="/stylesheets/dashboard.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="logo">LendMony</div>
+    <ul class="nav-links">
+      <li><a href="/dashboard">Home</a></li>
+      <li><a href="/loan/request">Loan Request</a></li>
+      <li><a href="/loan/offers">Loan Offers</a></li>
+      <li><a href="/loan/manage">Manage Loans</a></li>
+    </ul>
+    <div class="nav-actions">
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+  <div id="wallet-display" class="wallet-info">
+    Connected Wallet: <span id="wallet-address">Loading...</span>
+  </div>
+  <main class="dashboard-content">
+    <h2>Available Loan Requests</h2>
+    <div id="message"></div>
+    <div id="loan-list" class="loan-grid"></div>
+  </main>
+
+  <div id="fundModal" class="modal">
+    <div class="modal-content">
+      <span class="close" onclick="closeFundModal()">&times;</span>
+      <h2>Fund Loan</h2>
+      <div class="form-group">
+        <label for="modal-loan-id">Loan ID</label>
+        <input type="number" id="modal-loan-id" readonly>
+      </div>
+      <div class="form-group">
+        <label for="modal-amount">Amount (in Wei)</label>
+        <input type="number" id="modal-amount" readonly>
+      </div>
+      <button onclick="fundLoanFromModal()">Confirm Funding</button>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+<script src="/javascripts/web3-app.js"></script>
+
+<script>
+  async function loadAvailableLoans() {
+    const count = await lendMonyContract.methods.getLoanCount().call();
+    const list = document.getElementById("loan-list");
+    list.innerHTML = "";
+
+    for (let i = 0; i < count; i++) {
+      const loan = await lendMonyContract.methods.getLoan(i).call();
+      const status = loan.repaid ? "Repaid" : loan.funded ? "Funded" : "Pending";
+
+      const item = document.createElement("div");
+      item.classList.add("loan-item");
+
+      item.innerHTML = `
+        <div class="loan-status status-${status.toLowerCase()}">${status}</div>
+        <h4>Loan Id: #${i}</h4>
+        <p><strong>Borrower:</strong> ${loan.borrower.slice(0, 6)}...${loan.borrower.slice(-4)}</p>
+        <p><strong>Amount:</strong> ${web3.utils.fromWei(loan.amount)} ETH</p>
+        <p><strong>Interest:</strong> ${web3.utils.fromWei(loan.interest)} ETH</p>
+        <p><strong>Deadline:</strong> ${new Date(loan.deadline * 1000).toLocaleString()}</p>
+        ${(!loan.funded && !loan.repaid)
+          ? `<button onclick="openFundModal(${i}, ${loan.amount})">Fund This Loan</button>`
+          : ""}
+      `;
+
+      list.appendChild(item);
+    }
+  }
+
+  function openFundModal(loanId, amountWei) {
+    document.getElementById("modal-loan-id").value = loanId;
+    document.getElementById("modal-amount").value = web3.utils.fromWei(amountWei.toString(), "ether");
+    document.getElementById("fundModal").style.display = "block";
+  }
+
+  function closeFundModal() {
+    const modal = document.getElementById("fundModal");
+    modal.classList.add("fade-out");
+    setTimeout(() => {
+      modal.style.display = "none";
+      modal.classList.remove("fade-out");
+    }, 200);
+  }
+
+  async function fundLoanFromModal() {
+    const loanId = document.getElementById("modal-loan-id").value;
+    const amount = document.getElementById("modal-amount").value;
+    await fundLoanWithId(loanId, amount);
+    closeFundModal();
+    location.reload();
+  }
+
+  window.onclick = function (event) {
+    const modal = document.getElementById("fundModal");
+    if (event.target === modal) {
+      closeFundModal();
+    }
+  };
+
+  async function fundLoanWithId(loanId, amountEth) {
+    if (!(await checkWalletConnection())) return;
+  
+    const amountWei = web3.utils.toWei(amountEth.toString(), "ether");
+  
+    showMessage(`Funding loan #${loanId}...`);
+    try {
+      await lendMonyContract.methods.fundLoan(loanId).send({
+        from: account,
+        value: amountWei
+      });
+      showMessage("Loan funded successfully!");
+      loadAvailableLoans();
+    } catch (error) {
+      console.error(error);
+      showMessage("Failed to fund loan.", "red");
+    }
+  }
+  // Load loans on page load
+  window.onload = async function () {
+    if (typeof window.ethereum !== "undefined") {
+      web3 = new Web3(window.ethereum);
+      await ethereum.request({ method: "eth_requestAccounts" });
+      const accounts = await web3.eth.getAccounts();
+      account = accounts[0];
+      lendMonyContract = new web3.eth.Contract(lendMonyABI, lendMonyAddress);
+      loadAvailableLoans();
+      displayWalletAddress();
+    } else {
+      alert("Please install MetaMask to use this dApp.");
+    }
+  };
+</script>
+</body>
+</html>

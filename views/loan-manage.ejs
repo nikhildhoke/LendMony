@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Manage Loans</title>
+  <link rel="stylesheet" href="/stylesheets/dashboard.css">
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="logo">LendMony</div>
+  <ul class="nav-links">
+    <li><a href="/dashboard">Home</a></li>
+    <li><a href="/loan/request">Loan Request</a></li>
+    <li><a href="/loan/offers">Loan Offers</a></li>
+    <li><a href="/loan/manage">Manage Loans</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</nav>
+<div id="wallet-display" class="wallet-info">
+  Connected Wallet: <span id="wallet-address">Loading...</span>
+</div>
+<main class="dashboard-content">
+  <h2>Your Unpaid Loans</h2>
+  <div id="message"></div>
+  <div id="loan-list" class="loan-grid"></div>
+</main>
+
+<!-- Modal for Repayment -->
+<div id="repayModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeRepayModal()">&times;</span>
+    <h2>Repay Loan</h2>
+    <div class="form-group">
+      <label for="modal-repay-id">Loan ID</label>
+      <input type="number" id="modal-repay-id" readonly>
+    </div>
+    <div class="form-group">
+      <label for="modal-repay-amount">Repayment Amount (Wei)</label>
+      <input type="number" id="modal-repay-amount" readonly>
+    </div>
+    <button onclick="repayLoanFromModal()">Confirm Repayment</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+<script src="/javascripts/web3-app.js"></script>
+<script>
+  async function loadMyUnpaidLoans() {
+    const count = await lendMonyContract.methods.getLoanCount().call();
+    const list = document.getElementById("loan-list");
+    list.innerHTML = "";
+
+    for (let i = 0; i < count; i++) {
+      const loan = await lendMonyContract.methods.getLoan(i).call();
+      if (
+        loan.borrower.toLowerCase() === account.toLowerCase() &&
+        loan.funded &&
+        !loan.repaid
+      ) {
+        const item = document.createElement("div");
+        item.classList.add("loan-item");
+        // item.onclick = () => openRepayModal(i, Number(loan.amount) + Number(loan.interest));
+        let amountToRepay = Number(loan.amount) + Number(loan.interest);
+        item.innerHTML = `
+          <div class="loan-status status-funded">Funded</div>
+          <h4>Loan #${i}</h4>
+          <p><strong>Amount:</strong> ${web3.utils.fromWei(loan.amount)} ETH</p>
+          <p><strong>Interest:</strong> ${web3.utils.fromWei(loan.interest)} ETH</p>
+          <p><strong>Deadline:</strong> ${new Date(loan.deadline * 1000).toLocaleString()}</p>
+          <button onclick="openRepayModal(${i}, ${amountToRepay})">Click to Repay</button>
+        `;
+        list.appendChild(item);
+      }
+    }
+  }
+
+  function openRepayModal(loanId, repayWei) {
+    document.getElementById("modal-repay-id").value = loanId;
+    document.getElementById("modal-repay-amount").value = web3.utils.fromWei(repayWei.toString(), "ether");
+    document.getElementById("repayModal").style.display = "block";
+  }
+
+  function closeRepayModal() {
+    const modal = document.getElementById("repayModal");
+    modal.classList.add("fade-out");
+    setTimeout(() => {
+      modal.style.display = "none";
+      modal.classList.remove("fade-out");
+    }, 200);
+  }
+
+  async function repayLoanFromModal() {
+    const loanId = document.getElementById("modal-repay-id").value;
+    const repayAmount = document.getElementById("modal-repay-amount").value;
+    await repayLoanWithId(loanId, repayAmount);
+    closeRepayModal();
+    loadMyUnpaidLoans(); // refresh UI
+  }
+
+async function repayLoanWithId(loanId, repayEth) {
+  if (!(await checkWalletConnection())) return;
+
+  const repayWei = web3.utils.toWei(repayEth.toString(), "ether");
+
+  showMessage(`Repaying loan #${loanId}...`);
+
+  try {
+    await lendMonyContract.methods.repayLoan(loanId).send({
+      from: account,
+      value: repayWei
+    });
+    showMessage("Loan repaid successfully!");
+  } catch (error) {
+    console.error(error);
+    showMessage("Failed to repay loan.", "red");
+  }
+}
+
+  window.onclick = function (event) {
+    const modal = document.getElementById("repayModal");
+    if (event.target === modal) {
+      closeRepayModal();
+    }
+  };
+
+  window.onload = async function () {
+    if (typeof window.ethereum !== "undefined") {
+      web3 = new Web3(window.ethereum);
+      await ethereum.request({ method: "eth_requestAccounts" });
+      const accounts = await web3.eth.getAccounts();
+      account = accounts[0];
+      lendMonyContract = new web3.eth.Contract(lendMonyABI, lendMonyAddress);
+      loadMyUnpaidLoans();
+      displayWalletAddress();
+    } else {
+      alert("Please install MetaMask to use this dApp.");
+    }
+  };
+</script>
+</body>
+</html>

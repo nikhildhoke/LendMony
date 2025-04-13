@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="/stylesheets/dashboard.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+<nav class="navbar">
+  <div class="logo">LendMooony</div>
+  <ul class="nav-links">
+    <li><a href="/dashboard">Home</a></li>
+    <li><a href="/loan/request">Loan Request</a></li>
+    <li><a href="/loan/offers">Loan Offers</a></li>
+    <li><a href="/loan/manage">Manage Loans</a></li>
+  </ul>
+  <div class="nav-actions">
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+</nav>
+<div id="wallet-display" class="wallet-info">
+  Connected Wallet: <span id="wallet-address">Loading...</span>
+</div>
+<div id="message"></div>
+
+<main class="dashboard-content">
+  <h1>Welcome to LendMooony</h1>
+
+  <div class="dashboard-section">
+    <div class="dashboard-left">
+      <h2>My Loan Stats</h2>
+      <div class="analytics">
+        <div class="card">
+          <h3>My Total Loans</h3>
+          <p class="animated-count" id="my-loans">0</p>
+        </div>
+        <div class="card">
+          <h3>My Active Loans</h3>
+          <p class="animated-count" id="my-active-loans">0</p>
+        </div>
+        <div class="card">
+          <h3>My Repaid Loans</h3>
+          <p class="animated-count" id="my-repaid-loans">0</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="dashboard-right">
+      <h2>Loan Distribution</h2>
+      <canvas id="loanChart"></canvas>
+    </div>
+
+  </div>
+</main>
+
+<script src="/javascripts/web3-app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
+
+<script>
+  window.onload = async function () {
+    if (typeof window.ethereum !== "undefined") {
+      web3 = new Web3(window.ethereum);
+      await ethereum.request({ method: "eth_requestAccounts" });
+      const accounts = await web3.eth.getAccounts();
+      account = accounts[0];
+
+      lendMonyContract = new web3.eth.Contract(lendMonyABI, lendMonyAddress);
+      lendMonyAnalyticsContract = new web3.eth.Contract(lendMonyAnalyticsABI, lendMonyAnalyticsAddress);
+
+      displayWalletAddress();
+      loadMyStats();
+    } else {
+      alert("Please install MetaMask");
+    }
+  };
+</script>
+
+</body>
+</html>
