@@ -20,13 +20,13 @@
   </div>
 </nav>
 <div id="wallet-display" class="wallet-info">
-  Connected Wallet: <span id="wallet-address">Loading...</span>
+  <span>Connected Wallet: <span id="wallet-address">Loading...</span></span>
+  <span>Current Gas Price: <span id="gas-price">Loading...</span></span> 
 </div>
 <div id="message"></div>
 
 <main class="dashboard-content">
   <h1>Welcome to LendMooony</h1>
-
   <div class="dashboard-section">
     <div class="dashboard-left">
       <h2>My Loan Stats</h2>
@@ -53,7 +53,12 @@
 
   </div>
 </main>
-
+  <div class="transaction-form-section">
+    <h2>Recent Transactions - View on Etherscan</h2>
+    <div class="tx-list" id="tx-list">
+      <p>Loading recent transactions...</p>
+    </div>
+  </div>
 <script src="/javascripts/web3-app.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/web3@1.10.0/dist/web3.min.js"></script>
 
@@ -70,6 +75,8 @@
 
       displayWalletAddress();
       loadMyStats();
+      loadRecentTxs();     // ✅ Show last 5 txs
+      loadGasPrice(); 
     } else {
       alert("Please install MetaMask");
     }

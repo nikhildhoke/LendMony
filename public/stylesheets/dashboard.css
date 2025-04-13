@@ -194,7 +194,7 @@ button:disabled {
     margin-right: auto;
 }
 
-.form-section h2 {
+.form-section h2, .transaction-form-section h2 {
     margin-bottom: 20px;
     text-align: center;
     font-size: 22px;
@@ -363,6 +363,8 @@ button:disabled {
 }
 
 .wallet-info {
+  display: flex;
+  justify-content: space-between;
   background-color: #1a1a1a;
   color: #f1f1f1;
   padding: 10px 30px;
@@ -403,4 +405,52 @@ button:disabled {
   .dashboard-section {
     flex-direction: column;
   }
+}
+
+.tx-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.tx-card {
+  background: #f7f7f7;
+  padding: 12px 18px;
+  border-left: 4px solid #5e60ce;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.tx-card:hover {
+  background: #efefef;
+}
+
+.tx-card a {
+  text-decoration: none;
+  color: #333;
+}
+
+.tx-card .tx-hash {
+  font-weight: bold;
+  color: #5e60ce;
+}
+
+.tx-card .tx-to {
+  color: #555;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.transaction-form-section {
+    background: #ffffff;
+    padding: 30px 25px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    margin-bottom: 30px;
+    margin-left: auto;
+    margin-right: auto;
 }

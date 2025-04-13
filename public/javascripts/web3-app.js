@@ -512,3 +512,64 @@ function renderLoanChart(active, repaid) {
   });
 }
 
+async function fetchUserTxHistory(address) {
+  const ETHERSCAN_API_KEY = "C6CFYYN2I5CHTMZ3R1JNKVX2F49DC1CPM3";
+  const url = `https://api-sepolia.etherscan.io/api?module=account&action=txlist&address=${address}&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.status === "1") {
+      return data.result.slice(0, 5); // Return latest 5 txs
+    } else {
+      console.warn("No transactions found.");
+      return [];
+    }
+  } catch (err) {
+    console.error("Error fetching tx list:", err);
+    return [];
+  }
+}
+
+async function loadRecentTxs() {
+  const txs = await fetchUserTxHistory(account);
+  const container = document.getElementById("tx-list");
+
+  if (!txs.length) {
+    container.innerHTML = "<p>No transactions found.</p>";
+    return;
+  }
+
+  container.innerHTML = txs.map(tx => {
+    const hashShort = `${tx.hash.slice(0, 10)}...`;
+    const toShort = tx.to ? tx.to : "Contract";
+    return `
+      <div class="tx-card">
+        <a href="https://sepolia.etherscan.io/tx/${tx.hash}" target="_blank">
+          <div class="tx-hash">Tx Hash: ${hashShort}</div>
+          <div class="tx-to">To: ${toShort}</div>
+        </a>
+      </div>
+    `;
+  }).join("");
+}
+
+
+async function loadGasPrice() {
+  const apiKey = "C6CFYYN2I5CHTMZ3R1JNKVX2F49DC1CPM3";
+  const url = `https://api.etherscan.io/api?module=gastracker&action=gasoracle&apikey=${apiKey}`;
+
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+
+    if (data.status === "1") {
+      const gwei = data.result.ProposeGasPrice;
+      document.getElementById("gas-price").innerText = `${gwei} Gwei (avg)`;
+    }
+  } catch (err) {
+    console.error("Error fetching gas price:", err);
+    document.getElementById("gas-price").innerText = "Unavailable";
+  }
+}
