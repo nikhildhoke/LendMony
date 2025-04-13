@@ -239,7 +239,7 @@ window.onload = async function () {
     lendMonyContract = new web3.eth.Contract(lendMonyABI, lendMonyAddress);
     
     await displayWalletAddress();
-
+		loadGasPrice();
     if (!(await checkWalletConnection())) {
       showMessage("Please connect your wallet", "red");
       return;

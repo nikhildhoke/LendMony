@@ -19,7 +19,8 @@
   </div>
 </nav>
 <div id="wallet-display" class="wallet-info">
-  Connected Wallet: <span id="wallet-address">Loading...</span>
+  <span>Connected Wallet: <span id="wallet-address">Loading...</span></span>
+  <span>Current Gas Price: <span id="gas-price">Loading...</span></span> 
 </div>
 <main class="dashboard-content">
   <h2>Your Unpaid Loans</h2>
@@ -134,6 +135,7 @@ async function repayLoanWithId(loanId, repayEth) {
       lendMonyContract = new web3.eth.Contract(lendMonyABI, lendMonyAddress);
       loadMyUnpaidLoans();
       displayWalletAddress();
+      loadGasPrice();
     } else {
       alert("Please install MetaMask to use this dApp.");
     }
