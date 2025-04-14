@@ -512,6 +512,26 @@ function renderLoanChart(active, repaid) {
   });
 }
 
+// async function fetchUserTxHistory(address) {
+//   const ETHERSCAN_API_KEY = "C6CFYYN2I5CHTMZ3R1JNKVX2F49DC1CPM3";
+//   const url = `https://api-sepolia.etherscan.io/api?module=account&action=txlist&address=${address}&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
+
+//   try {
+//     const res = await fetch(url);
+//     const data = await res.json();
+
+//     if (data.status === "1") {
+//       return data.result.slice(0, 5);
+//     } else {
+//       console.warn("No transactions found.");
+//       return [];
+//     }
+//   } catch (err) {
+//     console.error("Error fetching tx list:", err);
+//     return [];
+//   }
+// }
+
 async function fetchUserTxHistory(address) {
   const ETHERSCAN_API_KEY = "C6CFYYN2I5CHTMZ3R1JNKVX2F49DC1CPM3";
   const url = `https://api-sepolia.etherscan.io/api?module=account&action=txlist&address=${address}&sort=desc&apikey=${ETHERSCAN_API_KEY}`;
@@ -521,7 +541,12 @@ async function fetchUserTxHistory(address) {
     const data = await res.json();
 
     if (data.status === "1") {
-      return data.result.slice(0, 5); // Return latest 5 txs
+      const allTxs = data.result.filter(tx =>
+        tx.from.toLowerCase() === address.toLowerCase() ||
+        tx.to.toLowerCase() === address.toLowerCase()
+      );
+
+      return allTxs.slice(0, 5);
     } else {
       console.warn("No transactions found.");
       return [];
@@ -566,7 +591,7 @@ async function loadGasPrice() {
 
     if (data.status === "1") {
       const gwei = data.result.ProposeGasPrice;
-      document.getElementById("gas-price").innerText = `${gwei} Gwei (avg)`;
+      document.getElementById("gas-price").innerText = `${gwei} Gwei`;
     }
   } catch (err) {
     console.error("Error fetching gas price:", err);
